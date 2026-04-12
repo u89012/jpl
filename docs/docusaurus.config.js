@@ -3,11 +3,11 @@ const config = {
   tagline: 'A language for applications, DSLs, and practical tooling',
   favicon: 'img/favicon.ico',
 
-  url: 'https://example.github.io',
-  baseUrl: '/',
+  url: 'https://u89012.github.io',
+  baseUrl: '/jpl/',
 
-  organizationName: 'example',
-  projectName: 'jaya',
+  organizationName: 'u89012',
+  projectName: 'jpl',
   trailingSlash: false,
 
   onBrokenLinks: 'throw',
@@ -51,7 +51,7 @@ const config = {
           label: 'Docs',
         },
         {
-          href: 'https://github.com/example/jaya',
+          href: 'https://github.com/u89012/jpl',
           label: 'GitHub',
           position: 'right',
         },
