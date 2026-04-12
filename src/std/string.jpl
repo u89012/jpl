@@ -1,0 +1,53 @@
+inflector = require('inflector')
+
+const String = {
+  trim = fn(self)
+    left = string.gsub(self, '^%s+', '')
+    return string.gsub(left, '%s+$', '')
+  end,
+
+  upcase = fn(self)
+    return string.upper(self)
+  end,
+
+  downcase = fn(self)
+    return string.lower(self)
+  end,
+
+  size = fn(self)
+    return #self
+  end,
+
+  empty = fn(self)
+    return self.size() == 0
+  end,
+
+  includes = fn(self, needle)
+    return string.find(self, needle, 1, true) != nil
+  end,
+
+  startsWith = fn(self, prefix)
+    return string.sub(self, 1, #prefix) == prefix
+  end,
+
+  endsWith = fn(self, suffix)
+    if #suffix > #self
+      return false
+    end
+    return string.sub(self, #self - #suffix + 1, #self) == suffix
+  end,
+
+  snake = fn(self)
+    return inflector.snake(self)
+  end,
+
+  camel = fn(self)
+    return inflector.camel(self)
+  end,
+
+  pascal = fn(self)
+    return inflector.pascal(self)
+  end
+}
+
+__jaya_define_primitive('string', String)

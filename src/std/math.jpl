@@ -1,0 +1,82 @@
+export const pi = math.pi
+export const huge = math.huge
+
+export fn abs(value)
+  return math.abs(value)
+end
+
+export fn floor(value)
+  return math.floor(value)
+end
+
+export fn ceil(value)
+  return math.ceil(value)
+end
+
+export fn round(value)
+  return math.floor(value + 0.5)
+end
+
+export fn sqrt(value)
+  return math.sqrt(value)
+end
+
+export fn pow(base, exponent)
+  return base ^ exponent
+end
+
+export fn min(a, b)
+  return math.min(a, b)
+end
+
+export fn max(a, b)
+  return math.max(a, b)
+end
+
+export fn clamp(value, minValue, maxValue)
+  if value < minValue
+    return minValue
+  end
+  if value > maxValue
+    return maxValue
+  end
+  return value
+end
+
+export fn sin(value)
+  return math.sin(value)
+end
+
+export fn cos(value)
+  return math.cos(value)
+end
+
+export fn tan(value)
+  return math.tan(value)
+end
+
+export fn asin(value)
+  return math.asin(value)
+end
+
+export fn acos(value)
+  return math.acos(value)
+end
+
+export fn atan(value)
+  return math.atan(value)
+end
+
+export fn random(minValue = nil, maxValue = nil)
+  if minValue == nil
+    return math.random()
+  end
+  if maxValue == nil
+    return math.random(minValue)
+  end
+  return math.random(minValue, maxValue)
+end
+
+export fn seed(seed)
+  return math.randomseed(seed)
+end

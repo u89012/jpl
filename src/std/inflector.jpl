@@ -1,0 +1,61 @@
+fn normalizeWords(value)
+  text = tostring(value)
+  text = string.gsub(text, '([A-Z]+)([A-Z][a-z])', '%1_%2')
+  text = string.gsub(text, '([a-z%d])([A-Z])', '%1_%2')
+  text = string.gsub(text, '[%s%-]+', '_')
+  text = string.gsub(text, '[^%w_]', '_')
+  text = string.gsub(text, '_+', '_')
+  text = string.gsub(text, '^_+', '')
+  text = string.gsub(text, '_+$', '')
+  return string.lower(text)
+end
+
+fn splitWords(text, out = [])
+  if text == ''
+    return out
+  end
+  idx = string.find(text, '_', 1, true)
+  if idx == nil
+    out.push(text)
+    return out
+  end
+  head = string.sub(text, 1, idx - 1)
+  if head != ''
+    out.push(head)
+  end
+  return splitWords(string.sub(text, idx + 1, #text), out)
+end
+
+fn capitalizeWord(word)
+  if word == ''
+    return ''
+  end
+  return string.upper(string.sub(word, 1, 1)) + string.sub(word, 2, #word)
+end
+
+export fn snake(value)
+  return normalizeWords(value)
+end
+
+export fn camel(value)
+  words = splitWords(normalizeWords(value))
+  if #words == 0
+    return ''
+  end
+  out = words[1]
+  if #words > 1
+    for i in 2..#words
+      out = out + capitalizeWord(words[i])
+    end
+  end
+  return out
+end
+
+export fn pascal(value)
+  words = splitWords(normalizeWords(value))
+  out = ''
+  for word in words
+    out = out + capitalizeWord(word)
+  end
+  return out
+end

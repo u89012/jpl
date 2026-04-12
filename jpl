@@ -1,0 +1,3 @@
+#!/usr/bin/env lua
+
+return dofile("src/jpl.lua")

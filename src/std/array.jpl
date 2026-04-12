@@ -1,0 +1,69 @@
+const Array = {
+  size = fn(self)
+    return #self
+  end,
+
+  empty = fn(self)
+    return self.size() == 0
+  end,
+
+  first = fn(self)
+    return self[1]
+  end,
+
+  last = fn(self)
+    return self[-1]
+  end,
+
+  push = fn(self, value)
+    table.insert(self, value)
+    return self
+  end,
+
+  pop = fn(self)
+    if self.empty()
+      return nil
+    end
+    return table.remove(self)
+  end,
+
+  join = fn(self, sep = '')
+    return table.concat(self, sep)
+  end,
+
+  includes = fn(self, needle)
+    for item in self
+      if item == needle
+        return t
+      end
+    end
+    return false
+  end,
+
+  map = fn(self, &blk)
+    out = []
+    for item in self
+      out.push(blk(item))
+    end
+    return out
+  end,
+
+  filter = fn(self, &blk)
+    out = []
+    for item in self
+      if blk(item)
+        out.push(item)
+      end
+    end
+    return out
+  end,
+
+  slice = fn(self, first, last, inclusive = t)
+    if inclusive
+      return self[first..last]
+    end
+    return self[first...last]
+  end
+}
+
+__jaya_define_primitive('array', Array)

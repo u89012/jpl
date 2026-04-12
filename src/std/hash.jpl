@@ -1,0 +1,54 @@
+const Hash = {
+  size = fn(self)
+    count = 0
+    for _, _ in self
+      count = count + 1
+    end
+    return count
+  end,
+
+  empty = fn(self)
+    return self.size() == 0
+  end,
+
+  keys = fn(self)
+    out = []
+    for key, _ in self
+      out.push(key)
+    end
+    return out
+  end,
+
+  values = fn(self)
+    out = []
+    for _, value in self
+      out.push(value)
+    end
+    return out
+  end,
+
+  has = fn(self, key)
+    return self[key] != nil
+  end,
+
+  fetch = fn(self, key, fallback = nil)
+    value = self[key]
+    if value == nil
+      return fallback
+    end
+    return value
+  end,
+
+  merge = fn(self, other)
+    out = {}
+    for key, value in self
+      out[key] = value
+    end
+    for key, value in other
+      out[key] = value
+    end
+    return out
+  end
+}
+
+__jaya_define_primitive('table', Hash)

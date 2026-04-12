@@ -1,0 +1,83 @@
+const sys = {
+  host = fn()
+    return 'lua'
+  end,
+
+  version = fn()
+    return _VERSION
+  end,
+
+  platform = fn()
+    if package.config[1] == '\\'
+      return 'windows'
+    end
+    return 'posix'
+  end,
+
+  cwd = fn()
+    cwd = os.getenv('PWD')
+    if cwd != nil && cwd != ''
+      return cwd
+    end
+    proc = io.popen('pwd')
+    if proc == nil
+      return '.'
+    end
+    value = proc:read('*l')
+    proc:close()
+    if value == nil || value == ''
+      return '.'
+    end
+    return value
+  end,
+
+  argv = fn()
+    out = []
+    if arg == nil
+      return out
+    end
+    for value in arg
+      out.push(value)
+    end
+    return out
+  end,
+
+  getEnv = fn(name, fallback = nil)
+    value = os.getenv(name)
+    if value == nil
+      return fallback
+    end
+    return value
+  end,
+
+  sleep = fn(seconds)
+    if seconds == nil || seconds <= 0
+      return nil
+    end
+    if package.config[1] == '\\'
+      os.execute('ping -n ' + tostring(seconds + 1) + ' 127.0.0.1 > NUL')
+      return nil
+    end
+    os.execute('sleep ' + tostring(seconds))
+    return nil
+  end,
+
+  print = print,
+
+  pp = fn(value)
+    print(JPL.dump(value))
+    return value
+  end,
+
+  warn = fn(value)
+    io.stderr:write(tostring(value), '\n')
+  end,
+
+  eprint = fn(value)
+    io.stderr:write(tostring(value), '\n')
+  end,
+
+  exit = os.exit,
+
+  panic = error
+}

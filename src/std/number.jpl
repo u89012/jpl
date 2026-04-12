@@ -1,0 +1,112 @@
+fn toBinaryPositive(n)
+  if n < 2
+    return tostring(n)
+  end
+  return toBinaryPositive(math.floor(n / 2)) + tostring(n % 2)
+end
+
+fn toBinary(value)
+  n = value.i()
+  if n == 0
+    return '0'
+  end
+  if n < 0
+    return '-' + toBinaryPositive(-n)
+  end
+  return toBinaryPositive(n)
+end
+
+const Number = {
+  abs = fn(self)
+    return math.abs(self)
+  end,
+
+  clamp = fn(self, min, max)
+    if self < min
+      return min
+    end
+    if self > max
+      return max
+    end
+    return self
+  end,
+
+  floor = fn(self)
+    return math.floor(self)
+  end,
+
+  ceil = fn(self)
+    return math.ceil(self)
+  end,
+
+  round = fn(self)
+    return math.floor(self + 0.5)
+  end,
+
+  i = fn(self)
+    if self >= 0
+      return math.floor(self)
+    end
+    return math.ceil(self)
+  end,
+
+  f = fn(self)
+    return self + 0.0
+  end,
+
+  s = fn(self, format = 'decimal')
+    if format == 'decimal'
+      return tostring(self)
+    end
+    value = self.i()
+    if format == 'octal'
+      return string.format('%o', value)
+    end
+    if format == 'hex'
+      return string.format('%x', value)
+    end
+    if format == 'binary'
+      return toBinary(value)
+    end
+    throw 'unsupported number format: ' + tostring(format)
+  end,
+
+  zero = fn(self)
+    return self == 0
+  end,
+
+  positive = fn(self)
+    return self > 0
+  end,
+
+  negative = fn(self)
+    return self < 0
+  end,
+
+  between = fn(self, min, max)
+    return self >= min && self <= max
+  end,
+
+  incr = fn(self, step = 1)
+    return self + step
+  end,
+
+  decr = fn(self, step = 1)
+    return self - step
+  end,
+
+  times = fn(self, &blk)
+    if blk == nil
+      throw 'times used without a block'
+    end
+    if self <= 0
+      return self
+    end
+    for i in 0...self
+      blk(i)
+    end
+    return self
+  end
+}
+
+__jaya_define_primitive('number', Number)

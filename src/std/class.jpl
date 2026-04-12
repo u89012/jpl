@@ -1,0 +1,23 @@
+const Class = {
+  name = fn(self)
+    return __jaya_class_name(self)
+  end,
+
+  location = fn(self)
+    return __jaya_class_location(self)
+  end,
+
+  fields = fn(self)
+    return __jaya_class_fields(self)
+  end,
+
+  parents = fn(self)
+    return __jaya_class_parents(self)
+  end,
+
+  functions = fn(self)
+    return __jaya_class_functions(self)
+  end
+}
+
+__jaya_define_primitive('class', Class)

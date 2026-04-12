@@ -1,0 +1,193 @@
+const VOID_TAGS = {
+  area = true,
+  base = true,
+  br = true,
+  col = true,
+  embed = true,
+  hr = true,
+  img = true,
+  input = true,
+  link = true,
+  meta = true,
+  param = true,
+  source = true,
+  track = true,
+  wbr = true
+}
+
+const TAG_NAMES = [
+  'html', 'head', 'body',
+  'div', 'span', 'p',
+  'h1', 'h2', 'h3',
+  'ul', 'ol', 'li',
+  'a', 'img', 'button',
+  'input', 'form', 'label',
+  'section', 'article', 'header', 'footer',
+  'table', 'thead', 'tbody', 'tr', 'th', 'td'
+]
+
+fn normalizeChildren(children, body)
+  if body != nil
+    children = body()
+  end
+  if children == nil
+    return []
+  end
+  if type(children) != 'table'
+    return [children]
+  end
+  return children
+end
+
+fn appendChild(target, child)
+  if child == nil
+    return
+  end
+  if type(child) != 'table'
+    target.push(child)
+    return
+  end
+  if child.tag != nil || rawget(child, '__class') != nil || !__jaya_is_array(child)
+    target.push(child)
+    return
+  end
+  for item in child
+    target.push(item)
+  end
+end
+
+export fn tag(name, attrs = {}, children = [], body = nil)
+  return {
+    tag = name,
+    props = attrs or {},
+    children = normalizeChildren(children, body)
+  }
+end
+
+export fn escape(value)
+  text = tostring(value)
+  text = string.gsub(text, '&', '&amp;')
+  text = string.gsub(text, '<', '&lt;')
+  text = string.gsub(text, '>', '&gt;')
+  text = string.gsub(text, '"', '&quot;')
+  text = string.gsub(text, "'", '&#39;')
+  return text
+end
+
+fn renderAttrs(props)
+  if props == nil
+    return ''
+  end
+  keys = []
+  for key, _ in props
+    keys.push(key)
+  end
+  table.sort(keys)
+  parts = []
+  for key in keys
+    value = props[key]
+    if value == nil || value == false
+    elsif value == true
+      parts.push(' ' + key)
+    else
+      parts.push(' ' + key + '="' + escape(value) + '"')
+    end
+  end
+  return parts.join('')
+end
+
+fn renderChildren(children)
+  out = []
+  for child in children
+    out.push(render(child))
+  end
+  return out.join('')
+end
+
+fn includeKind(path)
+  clean = string.gsub(path, '[?#].*$', '')
+  lower = string.lower(clean)
+  if string.sub(lower, -4) == '.css'
+    return 'css'
+  end
+  if string.sub(lower, -3) == '.js' || string.sub(lower, -4) == '.mjs'
+    return 'js'
+  end
+  return nil
+end
+
+export fn render(value)
+  if value == nil
+    return ''
+  end
+  kind = type(value)
+  if kind == 'string' || kind == 'number' || kind == 'boolean'
+    return escape(value)
+  end
+  if kind != 'table'
+    return escape(tostring(value))
+  end
+  if value.tag == nil
+    parts = []
+    for item in value
+      parts.push(render(item))
+    end
+    return parts.join('')
+  end
+  attrs = renderAttrs(value.props)
+  if VOID_TAGS[value.tag]
+    return '<' + value.tag + attrs + '>'
+  end
+  return '<' + value.tag + attrs + '>' + renderChildren(value.children or []) + '</' + value.tag + '>'
+end
+
+export class Builder()
+  init()
+    self.roots = []
+    self.targets = [self.roots]
+  end
+
+  root() = self.roots
+
+  render() = render(self.roots)
+
+  s() = self.render()
+
+  buildTag(name, content = nil, attrs = nil, body = nil)
+    node = {
+      tag = name,
+      props = attrs or {},
+      children = []
+    }
+    self.targets[-1].push(node)
+    appendChild(node.children, content)
+    if body != nil
+      self.targets.push(node.children)
+      body()
+      self.targets.pop()
+    end
+    return node
+  end
+
+  tag(name, content = nil, **attrs, &body)
+    return self.buildTag(name, content, attrs, body)
+  end
+
+  include(path)
+    kind = includeKind(path)
+    if kind == 'css'
+      return self.buildTag('link', nil, { rel = 'stylesheet', href = path }, nil)
+    end
+    if kind == 'js'
+      return self.buildTag('script', nil, { src = path }, nil)
+    end
+    error('unsupported include path: ' + path, 0)
+  end
+end
+
+for name in TAG_NAMES
+  tagName = name
+  Builder[tagName] = fn(self, content = nil, **attrs, &body)
+    return self.buildTag(tagName, content, attrs, body)
+  end
+end

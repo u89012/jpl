@@ -1,0 +1,26 @@
+const Bool = {
+  s = fn(self)
+    if self
+      return 'true'
+    end
+    return 'false'
+  end,
+
+  negate = fn(self)
+    return self == false
+  end,
+
+  andAlso = fn(self, other)
+    return self && other
+  end,
+
+  orElse = fn(self, other)
+    return self || other
+  end,
+
+  xor = fn(self, other)
+    return (self && !other) || (!self && other)
+  end
+}
+
+__jaya_define_primitive('boolean', Bool)

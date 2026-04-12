@@ -1,0 +1,35 @@
+const Object = {
+  toJson = fn(self)
+    return self.publicFields()
+  end,
+
+  publicFields = fn(self)
+    return __jaya_instance_fields_by_visibility(self, 'public')
+  end,
+
+  privateFields = fn(self)
+    return __jaya_instance_fields_by_visibility(self, 'private')
+  end,
+
+  protectedFields = fn(self)
+    return __jaya_instance_fields_by_visibility(self, 'protected')
+  end,
+
+  s = fn(self)
+    cls = rawget(self, '__class')
+    className = __jaya_class_name(cls) or 'Object'
+    source = cls && rawget(cls, '__jaya_source') or nil
+    moduleName = __jaya_module_basename(source)
+    if moduleName != nil && moduleName != '' && string.sub(moduleName, 1, 1) != '<'
+      className = moduleName + '.' + className
+    end
+    address = string.gsub(tostring(self), '^table: ', '')
+    shown = JPL.dump(self.toJson())
+    shown = string.gsub(shown, '%s+', ' ')
+    shown = string.gsub(shown, '^ ', '')
+    shown = string.gsub(shown, ' $', '')
+    return className + '@' + address + ' ' + shown
+  end
+}
+
+__jaya_define_object_methods(Object)

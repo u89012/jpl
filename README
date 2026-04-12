@@ -1,0 +1,30 @@
+Jaya
+
+Jaya is a small class-based scripting language with its own compiler, CLI,
+standard library, and documentation site.
+
+Project layout:
+- `jpl`: root launcher
+- `src/jpl.lua`: compiler, runtime helpers, CLI, and test runner
+- `src/std/`: Jaya standard library and prelude
+- `tests/`: language/compiler test suites
+
+Common commands:
+- `./jpl`
+  Start the Jaya REPL.
+- `./jpl file.jpl`
+  Compile and run a Jaya file.
+- `./jpl --i file.jpl`
+  Start the REPL and preload a file into the session.
+- `./jpl --t`
+  Run all discovered Jaya tests.
+- `./jpl --t path/to/file.jpl.t`
+  Run one Jaya test file.
+- `./jpl --lua file.jpl`
+  Print generated Lua.
+- `./jpl --luac file.jpl`
+  Write compiled Lua bytecode to `luac.out`.
+- `./jpl --luac file.jpl output.luac`
+  Write compiled Lua bytecode to a chosen output path.
+- `./jpl --ast file.jpl`
+  Print the parsed AST.

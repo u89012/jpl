@@ -1,0 +1,254 @@
+fn jsonError(message)
+  throw 'json error: ' + message
+end
+
+export const snake = 'snake'
+export const camel = 'camel'
+export const pascal = 'pascal'
+
+fn skipWhitespace(input, index)
+  ch = string.sub(input, index, index)
+  if ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t'
+    return skipWhitespace(input, index + 1)
+  end
+  return index
+end
+
+fn parseStringContent(input, index, out)
+  ch = string.sub(input, index, index)
+  if ch == ''
+    jsonError('unterminated string')
+  end
+  if ch == '"'
+    return [out.join(''), index + 1]
+  end
+  if ch == '\\'
+    esc = string.sub(input, index + 1, index + 1)
+    if esc == ''
+      jsonError('unterminated escape')
+    end
+    if esc == '"' || esc == '\\' || esc == '/'
+      out.push(esc)
+      return parseStringContent(input, index + 2, out)
+    end
+    if esc == 'b'
+      out.push(string.char(8))
+      return parseStringContent(input, index + 2, out)
+    end
+    if esc == 'f'
+      out.push(string.char(12))
+      return parseStringContent(input, index + 2, out)
+    end
+    if esc == 'n'
+      out.push('\n')
+      return parseStringContent(input, index + 2, out)
+    end
+    if esc == 'r'
+      out.push('\r')
+      return parseStringContent(input, index + 2, out)
+    end
+    if esc == 't'
+      out.push('\t')
+      return parseStringContent(input, index + 2, out)
+    end
+    if esc == 'u'
+      jsonError('unicode escapes are not supported yet')
+    end
+    jsonError('invalid escape: ' + esc)
+  end
+  out.push(ch)
+  return parseStringContent(input, index + 1, out)
+end
+
+fn parseString(input, index)
+  if string.sub(input, index, index) != '"'
+    jsonError('expected string')
+  end
+  return parseStringContent(input, index + 1, [])
+end
+
+fn isNumberChar(ch)
+  if ch == ''
+    return false
+  end
+  return string.find('0123456789+-.eE', ch, 1, true) != nil
+end
+
+fn scanNumberEnd(input, index)
+  if isNumberChar(string.sub(input, index, index))
+    return scanNumberEnd(input, index + 1)
+  end
+  return index
+end
+
+fn parseNumber(input, index)
+  endIndex = scanNumberEnd(input, index)
+  token = string.sub(input, index, endIndex - 1)
+  if token == nil || token == ''
+    jsonError('invalid number')
+  end
+  value = tonumber(token)
+  if value == nil
+    jsonError('invalid number')
+  end
+  return [value, index + #token]
+end
+
+fn parseArrayItems(input, index, out)
+  valuePair = parseValue(input, index)
+  out.push(valuePair[1])
+  nextIndex = skipWhitespace(input, valuePair[2])
+  ch = string.sub(input, nextIndex, nextIndex)
+  if ch == ','
+    return parseArrayItems(input, skipWhitespace(input, nextIndex + 1), out)
+  end
+  if ch == ']'
+    return [out, nextIndex + 1]
+  end
+  jsonError('expected , or ]')
+end
+
+fn parseArray(input, index)
+  nextIndex = skipWhitespace(input, index + 1)
+  if string.sub(input, nextIndex, nextIndex) == ']'
+    return [[], nextIndex + 1]
+  end
+  return parseArrayItems(input, nextIndex, [])
+end
+
+fn parseObjectItems(input, index, out)
+  keyPair = parseString(input, index)
+  key = keyPair[1]
+  nextIndex = skipWhitespace(input, keyPair[2])
+  if string.sub(input, nextIndex, nextIndex) != ':'
+    jsonError('expected :')
+  end
+  valuePair = parseValue(input, skipWhitespace(input, nextIndex + 1))
+  out[key] = valuePair[1]
+  nextIndex = skipWhitespace(input, valuePair[2])
+  ch = string.sub(input, nextIndex, nextIndex)
+  if ch == ','
+    return parseObjectItems(input, skipWhitespace(input, nextIndex + 1), out)
+  end
+  if ch == '}'
+    return [out, nextIndex + 1]
+  end
+  jsonError('expected , or }')
+end
+
+fn parseObject(input, index)
+  nextIndex = skipWhitespace(input, index + 1)
+  if string.sub(input, nextIndex, nextIndex) == '}'
+    return [{}, nextIndex + 1]
+  end
+  return parseObjectItems(input, nextIndex, {})
+end
+
+fn parseValue(input, index)
+  index = skipWhitespace(input, index)
+  ch = string.sub(input, index, index)
+  if ch == '"'
+    return parseString(input, index)
+  end
+  if ch == '{'
+    return parseObject(input, index)
+  end
+  if ch == '['
+    return parseArray(input, index)
+  end
+  if ch == 't' && string.sub(input, index, index + 3) == 'true'
+    return [true, index + 4]
+  end
+  if ch == 'f' && string.sub(input, index, index + 4) == 'false'
+    return [false, index + 5]
+  end
+  if ch == 'n' && string.sub(input, index, index + 3) == 'null'
+    return [nil, index + 4]
+  end
+  if ch == '-' || string.find(ch, '%d') != nil
+    return parseNumber(input, index)
+  end
+  jsonError('unexpected token')
+end
+
+fn escapeString(value)
+  escaped = string.gsub(value, '\\', '\\\\')
+  escaped = string.gsub(escaped, '"', '\\"')
+  escaped = string.gsub(escaped, '\n', '\\n')
+  escaped = string.gsub(escaped, '\r', '\\r')
+  escaped = string.gsub(escaped, '\t', '\\t')
+  escaped = string.gsub(escaped, string.char(8), '\\b')
+  escaped = string.gsub(escaped, string.char(12), '\\f')
+  return '"' + escaped + '"'
+end
+
+fn encodeKey(key, casing)
+  case casing
+  when nil
+    return key
+  when snake
+    return key.snake()
+  when camel
+    return key.camel()
+  when pascal
+    return key.pascal()
+  else
+    jsonError('unsupported casing: ' + tostring(casing))
+  end
+end
+
+fn encodeValue(value, casing = nil)
+  if value == nil
+    return 'null'
+  end
+  if value == true
+    return 'true'
+  end
+  if value == false
+    return 'false'
+  end
+  kind = type(value)
+  if kind == 'number'
+    if value != value || value == math.huge || value == -math.huge
+      jsonError('cannot stringify non-finite number')
+    end
+    return tostring(value)
+  end
+  if kind == 'string'
+    return escapeString(value)
+  end
+  if kind == 'table'
+    if __jaya_is_array(value)
+      parts = []
+      for item in value
+        parts.push(encodeValue(item, casing))
+      end
+      return '[' + parts.join(',') + ']'
+    end
+    parts = []
+    for key, item in value
+      if type(key) != 'string'
+        jsonError('object keys must be strings')
+      end
+      parts.push(escapeString(encodeKey(key, casing)) + ':' + encodeValue(item, casing))
+    end
+    return '{' + parts.join(',') + '}'
+  end
+  jsonError('unsupported value type: ' + kind)
+end
+
+export fn encode(value, casing = nil)
+  return encodeValue(value, casing)
+end
+
+export fn decode(input)
+  if type(input) != 'string'
+    jsonError('decode expects a string')
+  end
+  pair = parseValue(input, skipWhitespace(input, 1))
+  nextIndex = skipWhitespace(input, pair[2])
+  if string.sub(input, nextIndex, nextIndex) != ''
+    jsonError('trailing characters')
+  end
+  return pair[1]
+end

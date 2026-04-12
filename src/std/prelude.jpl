@@ -1,0 +1,19 @@
+include('./sys')
+include('./array')
+include('./bool')
+include('./class')
+include('./function')
+include('./hash')
+include('./module')
+include('./number')
+include('./object')
+include('./string')
+
+const print = sys.print
+const pp = sys.pp
+const warn = sys.warn
+const exit = sys.exit
+const cwd = sys.cwd
+const argv = sys.argv
+const getEnv = sys.getEnv
+const sleep = sys.sleep

@@ -1,0 +1,13 @@
+export fn assertEq(actual, expected)
+  assert(actual == expected)
+end
+
+export fn assertNil(value)
+  assert(value == nil)
+end
+
+export fn compileAndLoad(src, source = '<test>')
+  code = JPL.compile(src, source)
+  chunk = assert(load(code))
+  return chunk()
+end

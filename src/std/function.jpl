@@ -1,0 +1,15 @@
+const Function = {
+  name = fn(self)
+    return __jaya_function_name(self)
+  end,
+
+  location = fn(self)
+    return __jaya_function_location(self)
+  end,
+
+  params = fn(self)
+    return __jaya_function_params(self)
+  end
+}
+
+__jaya_define_primitive('function', Function)

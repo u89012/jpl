@@ -1,0 +1,15 @@
+const Module = {
+  name = fn(self)
+    return __jaya_module_name(self)
+  end,
+
+  location = fn(self)
+    return __jaya_module_location(self)
+  end,
+
+  functions = fn(self)
+    return __jaya_module_functions(self)
+  end
+}
+
+__jaya_define_primitive('module', Module)

@@ -1,0 +1,12 @@
+export fn readFile(path)
+  fh = assert(io.open(path, 'rb'))
+  data = fh:read('*a')
+  fh:close()
+  return data
+end
+
+export fn writeFile(path, contents)
+  fh = assert(io.open(path, 'wb'))
+  fh:write(contents)
+  fh:close()
+end
