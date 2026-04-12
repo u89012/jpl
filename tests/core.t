@@ -510,6 +510,29 @@ end
   assertEq(no[1], true)
   assertEq(no[2], 'fallback')
 end
+fn testOrAssignWorks()
+  src = """
+export fn probe()
+  count ||= 1
+  count ||= 2
+
+  flags = {ready = false}
+  flags.ready ||= true
+  flags.ready ||= false
+
+  items = []
+  items[1] ||= 'first'
+  items[1] ||= 'second'
+
+  return [count, flags.ready, items[1]]
+end
+"""
+  mod = compileAndLoad(src)
+  out = mod.probe()
+  assertEq(out[1], 1)
+  assertEq(out[2], true)
+  assertEq(out[3], 'first')
+end
 fn testHooksShareModuleState()
   assertEq(state.includes('before'), true)
 end

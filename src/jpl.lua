@@ -52,6 +52,7 @@ local KEYWORDS = {
 }
 
 local MULTI = {
+  ["||="] = true,
   ["..."] = true,
   [".."] = true,
   ["**"] = true,
@@ -1432,6 +1433,15 @@ function Parser:parse_assignment_or_expr()
     })
   end
   local expr = self:parse_suffixed_expression()
+  if self:is_assignable(expr) and self:current().kind == "symbol" and self:current().value == "||=" then
+    self:advance()
+    return self:with_postfix_condition({
+      kind = "OrAssign",
+      target = expr,
+      value = self:parse_expression(),
+      local_default = true,
+    })
+  end
   if self:is_assignable(expr) and ((self:current().kind == "symbol" and self:current().value == "=") or (self:current().kind == "symbol" and self:current().value == ",")) then
     local targets = { expr }
     while self:match("symbol", ",") do
@@ -2323,6 +2333,27 @@ function MacroRuntime:eval_stmt(node)
       end
       self:declare(pattern.name, values[i])
     end
+  elseif node.kind == "OrAssign" then
+    local current
+    if node.target.kind == "Name" then
+      current = nil
+      for i = #self.scopes, 1, -1 do
+        local scope = self.scopes[i]
+        if scope[node.target.value] ~= nil then
+          current = scope[node.target.value]
+          break
+        end
+      end
+    elseif node.target.kind == "Member" then
+      current = self:eval_expr(node.target.object)[node.target.name]
+    elseif node.target.kind == "Index" then
+      current = self:eval_expr(node.target.object)[self:eval_expr(node.target.index)]
+    else
+      self:error("unsupported macro or-assignment target: " .. tostring(node.target.kind))
+    end
+    if not self:is_truthy(current) then
+      self:assign_target(node.target, self:eval_expr(node.value))
+    end
   elseif node.kind == "Return" then
     local values = {}
     for i, value in ipairs(node.values or {}) do
@@ -2725,6 +2756,7 @@ function Expander:expand_stmt(node)
       self:error("macro " .. node.expression.callee.value .. " did not expand to an AST node")
     end
     if expanded.kind ~= "ExprStmt" and expanded.kind ~= "Assign" and expanded.kind ~= "LocalAssign" and expanded.kind ~= "ExportAssign"
+        and expanded.kind ~= "OrAssign"
         and expanded.kind ~= "Return" and expanded.kind ~= "If" and expanded.kind ~= "Unless"
         and expanded.kind ~= "Case" and expanded.kind ~= "Let" and expanded.kind ~= "Match" and expanded.kind ~= "Try"
         and expanded.kind ~= "Throw" and expanded.kind ~= "Break" and expanded.kind ~= "Continue" and expanded.kind ~= "Go" and expanded.kind ~= "FnDecl"
@@ -2740,6 +2772,8 @@ function Expander:expand_stmt(node)
     for i, value in ipairs(out.values or {}) do
       out.values[i] = self:expand_expr(value)
     end
+  elseif out.kind == "OrAssign" then
+    out.value = self:expand_expr(out.value)
   elseif out.kind == "LocalAssign" then
     for i, value in ipairs(out.values or {}) do
       out.values[i] = self:expand_expr(value)
@@ -4381,6 +4415,8 @@ end
 function Codegen:emit_stmt(node)
   if node.kind == "Assign" then
     self:emit_assign(node)
+  elseif node.kind == "OrAssign" then
+    self:emit_or_assign(node)
   elseif node.kind == "DestructureAssign" then
     if #node.values ~= 1 then
       self:error("destructuring assignment needs exactly one value")
@@ -4553,6 +4589,46 @@ function Codegen:emit_assign(node)
     end
   end
   self:line(prefix .. table.concat(pieces, ", ") .. " = " .. self:emit_expr_list(node.values))
+end
+
+function Codegen:emit_or_assign(node)
+  local target = node.target
+  local value_expr = self:emit_expr(node.value)
+  if target.kind == "Name" then
+    if self:is_const(target.value) then
+      self:error("cannot reassign const: " .. target.value)
+    end
+    if node.local_default and not self:is_declared(target.value) then
+      self:declare(target.value)
+      self:line("local " .. target.value .. " = " .. value_expr)
+      return
+    end
+    self:line(target.value .. " = " .. target.value .. " or " .. value_expr)
+    return
+  end
+  if target.kind == "Member" then
+    local object_temp = self:new_temp()
+    self:line("do")
+    self:with_block(function()
+      self:line("local " .. object_temp .. " = " .. self:emit_expr(target.object))
+      self:line(object_temp .. "." .. target.name .. " = " .. object_temp .. "." .. target.name .. " or " .. value_expr)
+    end)
+    self:line("end")
+    return
+  end
+  if target.kind == "Index" then
+    local object_temp = self:new_temp()
+    local index_temp = self:new_temp()
+    self:line("do")
+    self:with_block(function()
+      self:line("local " .. object_temp .. " = " .. self:emit_expr(target.object))
+      self:line("local " .. index_temp .. " = " .. self:emit_expr(target.index))
+      self:line(object_temp .. "[" .. index_temp .. "] = " .. object_temp .. "[" .. index_temp .. "] or " .. value_expr)
+    end)
+    self:line("end")
+    return
+  end
+  self:error("unsupported ||= target " .. tostring(target.kind))
 end
 
 function Codegen:emit_const_assign(node)
