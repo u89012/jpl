@@ -1528,6 +1528,17 @@ function Parser:parse_expression(min_prec)
       inclusive = inclusive,
     }
   end
+  if min_prec == 0 and self:current().kind == "keyword" and self:current().value == "if" then
+    self:advance()
+    local condition = self:parse_expression()
+    self:expect("keyword", "else", "expected 'else' in conditional expression")
+    expr = {
+      kind = "IfExpr",
+      then_value = expr,
+      condition = condition,
+      else_value = self:parse_expression(),
+    }
+  end
   return expr
 end
 
@@ -2168,6 +2179,11 @@ function MacroRuntime:eval_expr(node)
       return left >= right
     end
     self:error("unsupported macro binary operator: " .. tostring(node.op))
+  elseif node.kind == "IfExpr" then
+    if self:is_truthy(self:eval_expr(node.condition)) then
+      return self:eval_expr(node.then_value)
+    end
+    return self:eval_expr(node.else_value)
   elseif node.kind == "Array" then
     local out = {}
     for i, item in ipairs(node.elements or {}) do
@@ -2633,6 +2649,10 @@ function Expander:expand_expr(node)
   elseif out.kind == "Binary" then
     out.left = self:expand_expr(out.left)
     out.right = self:expand_expr(out.right)
+  elseif out.kind == "IfExpr" then
+    out.condition = self:expand_expr(out.condition)
+    out.then_value = self:expand_expr(out.then_value)
+    out.else_value = self:expand_expr(out.else_value)
   elseif out.kind == "Call" or out.kind == "SafeCall" then
     out.callee = self:expand_expr(out.callee)
     for i, arg in ipairs(out.args or {}) do
@@ -2919,6 +2939,12 @@ local function __jaya_add(left, right)
     return tostring(left) .. tostring(right)
   end
   return left + right
+end
+local function __jaya_if_expr(condition, then_branch, else_branch)
+  if condition ~= nil and condition ~= false then
+    return then_branch()
+  end
+  return else_branch()
 end
 local function __jaya_range(first, last, inclusive)
   return { first = first, last = last, inclusive = inclusive }
@@ -3854,13 +3880,13 @@ local function __jaya_call_safe_with_block(fn, positional, block)
 end
 local function __jaya_yield(block, ...)
   if block == nil then
-    error("yield used without a block", 0)
+    return nil
   end
   return block(...)
 end
 local function __jaya_yield_named(block, positional, named)
   if block == nil then
-    error("yield used without a block", 0)
+    return nil
   end
   return __jaya_call_named(block, positional, named)
 end
@@ -5360,6 +5386,10 @@ function Codegen:emit_expr(node)
       return "__jaya_add(" .. self:emit_expr(node.left) .. ", " .. self:emit_expr(node.right) .. ")"
     end
     return "(" .. self:emit_expr(node.left) .. " " .. node.op .. " " .. self:emit_expr(node.right) .. ")"
+  elseif node.kind == "IfExpr" then
+    return "__jaya_if_expr(" .. self:emit_expr(node.condition)
+      .. ", function() return " .. self:emit_expr(node.then_value) .. " end"
+      .. ", function() return " .. self:emit_expr(node.else_value) .. " end)"
   elseif node.kind == "Call" then
     if node.callee.kind == "Name" and node.callee.value == "require" then
       if node.block then

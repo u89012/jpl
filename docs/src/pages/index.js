@@ -5,14 +5,20 @@ import Link from '@docusaurus/Link';
 const examples = {
   functions: {
     label: 'Functions',
-    code: `fn apply(value, fnc)
-  return fnc(value)
+    code: `fn greet(name, title = 'Mx', **opts, &blk)
+  prefix = opts.prefix || ''
+  label = prefix + title + ' ' + name
+  return yield(label) or label
 end
 
 export fn run()
-  double = fn(x) = x * 2
-  result = apply(21, double)
-  return apply(result, fn(x) = x + 1)
+  return greet(
+    name='Ada',
+    title='Dr',
+    prefix='Hello, '
+  ) do |value|
+    return value + '!'
+  end
 end`,
   },
   classes: {

@@ -414,6 +414,20 @@ end
   mod = compileAndLoad(src)
   assertEq(mod.probe(), 'x!:y!')
 end
+fn testYieldReturnsNilWithoutABlock()
+  src = """
+export fn greet(name, title = 'Mx', **opts, &blk)
+  prefix = opts.prefix || ''
+  label = prefix + title + ' ' + name
+  return yield(label) or label
+end
+"""
+  mod = compileAndLoad(src)
+  assertEq(mod.greet(name='Ada', title='Dr', prefix='Hello, '), 'Hello, Dr Ada')
+  assertEq(mod.greet(name='Ada') do |label|
+    return label + '!'
+  end, 'Mx Ada!')
+end
 fn testSafeCallAndIndexWork()
   src = """
 export fn probe(fnValue, items)
@@ -467,6 +481,34 @@ end
   no = mod.probe(false)
   assertEq(yes[1], 'yes')
   assertEq(no[1], 'no')
+end
+fn testConditionalExpressionsWork()
+  src = """
+export fn probe(flag)
+  label = 'yes' if flag else 'no'
+  return [label, ('big' if 2 > 1 else 'small')]
+end
+"""
+  mod = compileAndLoad(src)
+  yes = mod.probe(true)
+  no = mod.probe(false)
+  assertEq(yes[1], 'yes')
+  assertEq(no[1], 'no')
+  assertEq(yes[2], 'big')
+end
+fn testConditionalExpressionsPreserveFalseyThenValues()
+  src = """
+export fn probe(flag)
+  return [false if flag else true, nil if flag else 'fallback']
+end
+"""
+  mod = compileAndLoad(src)
+  yes = mod.probe(true)
+  no = mod.probe(false)
+  assertEq(yes[1], false)
+  assertNil(yes[2])
+  assertEq(no[1], true)
+  assertEq(no[2], 'fallback')
 end
 fn testHooksShareModuleState()
   assertEq(state.includes('before'), true)

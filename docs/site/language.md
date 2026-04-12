@@ -17,6 +17,23 @@ export fn greet(name, title = 'Mx')
 end
 ```
 
+Functions can accept blocks with `&blk` and invoke them with `yield(...)`.
+
+If no block is given, `yield(...)` returns `nil` instead of raising an error. That makes fallback patterns like this work cleanly:
+
+```jaya
+export fn greet(name, title = 'Mx', **opts, &blk)
+  prefix = opts.prefix || ''
+  label = prefix + title + ' ' + name
+  return yield(label) or label
+end
+
+greet(name='Ada')
+greet(name='Ada') do |label|
+  return label + '!'
+end
+```
+
 ## Classes
 
 ```jaya
