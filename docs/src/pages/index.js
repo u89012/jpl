@@ -138,6 +138,9 @@ export default function Home() {
 
   return (
     <Layout title="Jaya" description="Jaya Programming Language">
+      <div className="pageNotice">
+        Jaya and its standard library are still under heavy development. This project is not production-ready yet.
+      </div>
       <header className="hero hero--jaya">
         <div className="container">
           <div className="row row--align-center">

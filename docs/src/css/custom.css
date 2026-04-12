@@ -27,6 +27,16 @@
   margin-top: 2rem;
 }
 
+.pageNotice {
+  padding: 0.8rem 1rem;
+  text-align: center;
+  background: rgba(180, 83, 9, 0.12);
+  border-bottom: 1px solid rgba(180, 83, 9, 0.24);
+  color: #92400e;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
 .heroCodeCard {
   border: 1px solid rgba(12, 107, 88, 0.12);
   border-radius: 18px;
@@ -91,6 +101,12 @@
   background: rgba(14, 25, 22, 0.85);
   border-color: rgba(129, 201, 182, 0.14);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.26);
+}
+
+[data-theme='dark'] .pageNotice {
+  background: rgba(245, 158, 11, 0.12);
+  border-color: rgba(245, 158, 11, 0.28);
+  color: #fbbf24;
 }
 
 [data-theme='dark'] .heroCodeHeader {
