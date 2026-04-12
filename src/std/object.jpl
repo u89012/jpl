@@ -1,8 +1,4 @@
 const Object = {
-  toJson = fn(self)
-    return self.publicFields()
-  end,
-
   publicFields = fn(self)
     return __jaya_instance_fields_by_visibility(self, 'public')
   end,
@@ -24,7 +20,7 @@ const Object = {
       className = moduleName + '.' + className
     end
     address = string.gsub(tostring(self), '^table: ', '')
-    shown = JPL.dump(self.toJson())
+    shown = JPL.dump(self.publicFields())
     shown = string.gsub(shown, '%s+', ' ')
     shown = string.gsub(shown, '^ ', '')
     shown = string.gsub(shown, ' $', '')

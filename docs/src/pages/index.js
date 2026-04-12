@@ -3,35 +3,68 @@ import Layout from '@theme/Layout';
 import Link from '@docusaurus/Link';
 
 const examples = {
-  html: {
-    label: 'HTML Builder',
-    code: `html = require('html')
+  functions: {
+    label: 'Functions',
+    code: `fn apply(value, fnc)
+  return fnc(value)
+end
 
-export fn page(users)
-  b = html.Builder()
-  b.div(class='panel') do
-    b.h1('Users')
-    b.ul() do
-      for user in users
-        b.li("#{user.name} (#{user.role})")
-      end
-    end
-  end
-  return b.s()
+export fn run()
+  double = fn(x) = x * 2
+  result = apply(21, double)
+  return apply(result, fn(x) = x + 1)
 end`,
   },
-  macros: {
-    label: 'Macros',
-    code: `macro deftags(*names)
-  out = []
-  for name in names
-    out[#out + 1] = _q(
-      macro name(*children, **attrs, &body) = _q(
-        tag(_u(name), attrs, children, body)
-      )
-    )
+  classes: {
+    label: 'Classes',
+    code: `require('json')
+
+class User(name, role)
+  label() = "#{self.name} (#{self.role})"
+end
+
+class Admin(name, role, level) extends User
+  summary() = "#{self.label()} level=#{self.level}"
+end
+
+export fn summary()
+  user = Admin('Ada', 'admin', 3)
+  payload = user.toJson()
+  restored = Admin.fromJson(payload)
+  pp(restored)
+  return [restored.s(), restored.summary(), payload]
+end`,
+  },
+  concurrency: {
+    label: 'Concurrency',
+    code: `fn syncUsers()
+  while t ; t is true
+    print('syncing users')
   end
-  return out
+end
+
+fn processQueue()
+  while t ; t is true
+    print('processing queue')
+  end
+end
+
+export fn runWorkers()
+  go syncUsers()
+  go processQueue()
+end`,
+  },
+  modules: {
+    label: 'Modules',
+    code: `require('json')
+require('./math_utils')
+
+export fn buildPayload()
+  total = mathUtils.add(20, 22)
+  return json.encode({
+    total = total,
+    status = 'ready'
+  }, casing=json.camelCase)
 end`,
   },
   match: {
@@ -49,8 +82,22 @@ export fn describe(value)
   end
 end`,
   },
+  macros: {
+    label: 'Macros',
+    code: `macro deftags(*names)
+  out = []
+  for name in names
+    out[#out + 1] = _q(
+      macro name(*children, **attrs, &body) = _q(
+        tag(_u(name), attrs, children, body)
+      )
+    )
+  end
+  return out
+end`,
+  },
   json: {
-    label: 'JSON and Stdlib',
+    label: 'JSON',
     code: `json = require('json')
 
 export fn payload(user)
@@ -61,10 +108,27 @@ export fn payload(user)
   }, casing=json.camelCase)
 end`,
   },
+  html: {
+    label: 'HTML Builder',
+    code: `html = require('html')
+
+export fn page(users)
+  b = html.Builder()
+  b.div(class='panel') do
+    b.h1('Users')
+    b.ul() do
+      for user in users
+        b.li("#{user.name} (#{user.role})")
+      end
+    end
+  end
+  return b.s()
+end`,
+  },
 };
 
 export default function Home() {
-  const [example, setExample] = useState('html');
+  const [example, setExample] = useState('functions');
 
   return (
     <Layout title="Jaya" description="The Jaya Programming Language">

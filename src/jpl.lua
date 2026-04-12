@@ -7,6 +7,7 @@ local KEYWORDS = {
   ["break"] = true,
   ["case"] = true,
   ["class"] = true,
+  ["continue"] = true,
   ["const"] = true,
   ["do"] = true,
   ["else"] = true,
@@ -100,6 +101,7 @@ local RESERVED_BUILTINS = {
 local LUA_BARE_KEYS = {
   ["and"] = false,
   ["break"] = false,
+  ["continue"] = false,
   ["do"] = false,
   ["else"] = false,
   ["elseif"] = false,
@@ -611,6 +613,8 @@ function Parser:parse_statement()
       return self:parse_const(false)
     elseif kw == "for" then
       return self:parse_for()
+    elseif kw == "while" then
+      return self:parse_while()
     elseif kw == "match" then
       return self:parse_match()
     elseif kw == "try" then
@@ -619,6 +623,8 @@ function Parser:parse_statement()
       return self:parse_return()
     elseif kw == "break" then
       return self:parse_break()
+    elseif kw == "continue" then
+      return self:parse_continue()
     elseif kw == "go" then
       return self:parse_go()
     elseif kw == "throw" then
@@ -644,6 +650,19 @@ function Parser:parse_for()
     kind = "ForIn",
     names = names,
     iterable = iterable,
+    body = body,
+  }
+end
+
+function Parser:parse_while()
+  self:expect("keyword", "while")
+  local condition = self:parse_expression()
+  self:match("keyword", "do")
+  local body = self:parse_block()
+  self:expect("keyword", "end", "expected 'end' to close while")
+  return {
+    kind = "While",
+    condition = condition,
     body = body,
   }
 end
@@ -870,6 +889,12 @@ function Parser:parse_break()
   self:expect("keyword", "break")
   local cond = self:parse_postfix_condition()
   return { kind = "Break", condition = cond }
+end
+
+function Parser:parse_continue()
+  self:expect("keyword", "continue")
+  local cond = self:parse_postfix_condition()
+  return { kind = "Continue", condition = cond }
 end
 
 function Parser:parse_throw()
@@ -2288,6 +2313,16 @@ function MacroRuntime:eval_stmt(node)
       values[i] = self:eval_expr(value)
     end
     error({ __macro_return = true, values = values }, 0)
+  elseif node.kind == "Break" then
+    if node.condition == nil or (node.condition.kind == "IfCond" and self:is_truthy(self:eval_expr(node.condition.expr)))
+        or (node.condition.kind == "UnlessCond" and not self:is_truthy(self:eval_expr(node.condition.expr))) then
+      error({ __macro_break = true }, 0)
+    end
+  elseif node.kind == "Continue" then
+    if node.condition == nil or (node.condition.kind == "IfCond" and self:is_truthy(self:eval_expr(node.condition.expr)))
+        or (node.condition.kind == "UnlessCond" and not self:is_truthy(self:eval_expr(node.condition.expr))) then
+      error({ __macro_continue = true }, 0)
+    end
   elseif node.kind == "If" then
     for _, branch in ipairs(node.branches or {}) do
       if self:is_truthy(self:eval_expr(branch.condition)) then
@@ -2368,14 +2403,50 @@ function MacroRuntime:eval_stmt(node)
         end
         seed = key
         self:push_scope({ [names[1]] = value })
-        self:eval_block(node.body or {})
+        local ok, result = pcall(function()
+          self:eval_block(node.body or {})
+        end)
         self:pop_scope()
+        if not ok then
+          if type(result) == "table" and result.__macro_continue then
+          elseif type(result) == "table" and result.__macro_break then
+            break
+          else
+            error(result, 0)
+          end
+        end
       end
     else
       for key, value in pairs(iterable) do
         self:push_scope({ [names[1]] = key, [names[2]] = value })
-        self:eval_block(node.body or {})
+        local ok, result = pcall(function()
+          self:eval_block(node.body or {})
+        end)
         self:pop_scope()
+        if not ok then
+          if type(result) == "table" and result.__macro_continue then
+          elseif type(result) == "table" and result.__macro_break then
+            break
+          else
+            error(result, 0)
+          end
+        end
+      end
+    end
+  elseif node.kind == "While" then
+    while self:is_truthy(self:eval_expr(node.condition)) do
+      self:push_scope({})
+      local ok, result = pcall(function()
+        self:eval_block(node.body or {})
+      end)
+      self:pop_scope()
+      if not ok then
+        if type(result) == "table" and result.__macro_continue then
+        elseif type(result) == "table" and result.__macro_break then
+          break
+        else
+          error(result, 0)
+        end
       end
     end
   elseif node.kind == "ConditionalStmt" then
@@ -2636,7 +2707,8 @@ function Expander:expand_stmt(node)
     if expanded.kind ~= "ExprStmt" and expanded.kind ~= "Assign" and expanded.kind ~= "LocalAssign" and expanded.kind ~= "ExportAssign"
         and expanded.kind ~= "Return" and expanded.kind ~= "If" and expanded.kind ~= "Unless"
         and expanded.kind ~= "Case" and expanded.kind ~= "Let" and expanded.kind ~= "Match" and expanded.kind ~= "Try"
-        and expanded.kind ~= "Throw" and expanded.kind ~= "Break" and expanded.kind ~= "Go" and expanded.kind ~= "FnDecl"
+        and expanded.kind ~= "Throw" and expanded.kind ~= "Break" and expanded.kind ~= "Continue" and expanded.kind ~= "Go" and expanded.kind ~= "FnDecl"
+        and expanded.kind ~= "While"
         and expanded.kind ~= "ClassDecl" and expanded.kind ~= "MacroDecl" then
       expanded = { kind = "ExprStmt", expression = expanded }
     end
@@ -2668,6 +2740,10 @@ function Expander:expand_stmt(node)
       out.condition.expr = self:expand_expr(out.condition.expr)
     end
   elseif out.kind == "Break" then
+    if out.condition then
+      out.condition.expr = self:expand_expr(out.condition.expr)
+    end
+  elseif out.kind == "Continue" then
     if out.condition then
       out.condition.expr = self:expand_expr(out.condition.expr)
     end
@@ -2727,6 +2803,9 @@ function Expander:expand_stmt(node)
     out.finally_body = self:expand_block(out.finally_body)
   elseif out.kind == "Throw" or out.kind == "Go" then
     out.value = self:expand_expr(out.value)
+  elseif out.kind == "While" then
+    out.condition = self:expand_expr(out.condition)
+    out.body = self:expand_block(out.body)
   elseif out.kind == "ConditionalStmt" then
     out.statement = self:expand_stmt(out.statement)[1]
     out.condition.expr = self:expand_expr(out.condition.expr)
@@ -2977,6 +3056,17 @@ local function __jaya_define_primitive(kind, methods)
   __jaya_primitive_methods[kind] = methods or {}
   return __jaya_primitive_methods[kind]
 end
+local function __jaya_extend_primitive(kind, methods)
+  local target = __jaya_primitive_methods[kind]
+  if type(target) ~= "table" then
+    target = {}
+    __jaya_primitive_methods[kind] = target
+  end
+  for key, value in pairs(methods or {}) do
+    target[key] = value
+  end
+  return target
+end
 local function __jaya_collect_callable_names(value, inherited)
   local names = {}
   local seen = {}
@@ -3225,6 +3315,13 @@ local function __jaya_define_object_methods(methods)
   _G.__jaya_object_methods = __jaya_object_methods
   return __jaya_object_methods
 end
+local function __jaya_extend_object_methods(methods)
+  for key, value in pairs(methods or {}) do
+    __jaya_object_methods[key] = value
+  end
+  _G.__jaya_object_methods = __jaya_object_methods
+  return __jaya_object_methods
+end
 local function __jaya_class_from_json(cls, value)
   if type(value) ~= "table" then
     return value
@@ -3270,11 +3367,6 @@ local function __jaya_class(name, bases)
       local value = rawget(values, key)
       if value ~= nil then
         return value
-      end
-      if key == "fromJson" then
-        return function(value)
-          return __jaya_class_from_json(tbl, value)
-        end
       end
       return __jaya_lookup_class(tbl, key)
     end,
@@ -4090,6 +4182,7 @@ function Codegen.new(opts)
     indent = 0,
     scope_stack = { {} },
     temp_id = 0,
+    continue_labels = {},
     source_name = opts.source_name,
     compiler_path = opts.compiler_path,
     known_named_params = opts.known_named_params or {},
@@ -4185,7 +4278,7 @@ end
 
 function Codegen:block_has_nonlocal_control(stmts)
   for _, stmt in ipairs(stmts or {}) do
-    if stmt.kind == "Return" or stmt.kind == "Break" then
+    if stmt.kind == "Return" or stmt.kind == "Break" or stmt.kind == "Continue" then
       return true
     elseif stmt.kind == "If" then
       for _, branch in ipairs(stmt.branches or {}) do
@@ -4219,6 +4312,10 @@ function Codegen:block_has_nonlocal_control(stmts)
         return true
       end
     elseif stmt.kind == "Let" then
+      if self:block_has_nonlocal_control(stmt.body) then
+        return true
+      end
+    elseif stmt.kind == "While" then
       if self:block_has_nonlocal_control(stmt.body) then
         return true
       end
@@ -4304,12 +4401,28 @@ function Codegen:emit_stmt(node)
     else
       self:line("break")
     end
+  elseif node.kind == "Continue" then
+    local label = self.continue_labels[#self.continue_labels]
+    if not label then
+      self:error("continue used outside loop")
+    end
+    if node.condition then
+      self:line("if " .. self:emit_condition_expr(node.condition) .. " then")
+      self:with_block(function()
+        self:line("goto " .. label)
+      end)
+      self:line("end")
+    else
+      self:line("goto " .. label)
+    end
   elseif node.kind == "If" then
     self:emit_if(node)
   elseif node.kind == "Unless" then
     self:emit_unless(node)
   elseif node.kind == "Case" then
     self:emit_case(node)
+  elseif node.kind == "While" then
+    self:emit_while(node)
   elseif node.kind == "ForIn" then
     self:emit_for_in(node)
   elseif node.kind == "Match" then
@@ -4342,6 +4455,7 @@ end
 function Codegen:emit_for_in(node)
   local iterable = self:new_temp()
   local names = node.names or { node.name }
+  local continue_label = self:new_temp()
   self:line("do")
   self:with_block(function()
     self:line("local " .. iterable .. " = " .. self:emit_expr(node.iterable))
@@ -4354,11 +4468,36 @@ function Codegen:emit_for_in(node)
       for _, name in ipairs(names) do
         self:declare(name)
       end
+      self.continue_labels[#self.continue_labels + 1] = continue_label
+      self:line("do")
+      self:with_block(function()
+        for _, stmt in ipairs(node.body or {}) do
+          self:emit_stmt(stmt)
+        end
+      end)
+      self:line("end")
+      self.continue_labels[#self.continue_labels] = nil
+      self:line("::" .. continue_label .. "::")
+    end)
+    self:line("end")
+  end)
+  self:line("end")
+end
+
+function Codegen:emit_while(node)
+  local continue_label = self:new_temp()
+  self:line("while " .. self:emit_expr(node.condition) .. " do")
+  self:with_block(function()
+    self.continue_labels[#self.continue_labels + 1] = continue_label
+    self:line("do")
+    self:with_block(function()
       for _, stmt in ipairs(node.body or {}) do
         self:emit_stmt(stmt)
       end
     end)
     self:line("end")
+    self.continue_labels[#self.continue_labels] = nil
+    self:line("::" .. continue_label .. "::")
   end)
   self:line("end")
 end

@@ -6,6 +6,18 @@ export const snakeCase = 'snake'
 export const camelCase = 'camel'
 export const pascalCase = 'pascal'
 
+__jaya_extend_object_methods({
+  toJson = fn(self)
+    return self.publicFields()
+  end
+})
+
+__jaya_extend_primitive('class', {
+  fromJson = fn(self, value)
+    return __jaya_class_from_json(self, value)
+  end
+})
+
 fn skipWhitespace(input, index)
   ch = string.sub(input, index, index)
   if ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t'

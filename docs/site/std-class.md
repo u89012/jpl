@@ -14,4 +14,5 @@ Current methods:
 - `fields()`
 - `functions()`
 - `parents()`
-- `fromJson(value)`
+
+`fromJson(value)` is added when [`json`](/std-json) is required.

@@ -152,6 +152,8 @@ end
 end
 fn testObjectToJsonSkipsPrivateMembersByDefault()
   src = """
+json = require('json')
+
 class Account(public name, private token, protected status)
   private prop secret = 'hidden'
   protected prop level = 3
@@ -174,6 +176,8 @@ end
 end
 fn testClassFromJsonUsesPublicFieldsByDefault()
   src = """
+json = require('json')
+
 class Account(public name, private token, protected status)
   private prop secret = 'hidden'
   protected prop level = 3
@@ -262,6 +266,8 @@ end
 end
 fn testClassMethodsWork()
   src = """
+json = require('json')
+
 class Person(name)
   greet() = 'hi'
 end
@@ -292,6 +298,31 @@ end
   assertEq(out[9], true)
   assertEq(out[10], true)
   assertEq(out[11], true)
+end
+fn testJsonMethodsOnlyAppearAfterJsonIsLoaded()
+  src = """
+class Person(name) end
+
+export fn before()
+  person = Person('Ada')
+  return [person.toJson == nil, Person.fromJson == nil]
+end
+
+export fn after()
+  json = require('json')
+  person = Person('Ada')
+  roundTrip = Person.fromJson(person.toJson())
+  return [type(person.toJson) == 'function', type(Person.fromJson) == 'function', roundTrip.name]
+end
+"""
+  mod = compileAndLoad(src)
+  before = mod.before()
+  after = mod.after()
+  assertEq(before[1], true)
+  assertEq(before[2], true)
+  assertEq(after[1], true)
+  assertEq(after[2], true)
+  assertEq(after[3], 'Ada')
 end
 fn testModuleMethodsWork()
   dir = '/tmp/jpl_feature_module_methods'

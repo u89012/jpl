@@ -336,6 +336,44 @@ end
   mod = compileAndLoad(src)
   assertEq(mod.probe(), 'ran')
 end
+fn testWhileBreakAndContinueWork()
+  src = """
+export fn probe()
+  i = 0
+  out = []
+  while i < 6
+    i = i + 1
+    continue if i == 2
+    break if i == 5
+    out[#out + 1] = i
+  end
+  return out
+end
+"""
+  mod = compileAndLoad(src)
+  out = mod.probe()
+  assertEq(out[1], 1)
+  assertEq(out[2], 3)
+  assertEq(out[3], 4)
+  assertNil(out[4])
+end
+fn testContinueWorksInForInLoops()
+  src = """
+export fn probe()
+  out = []
+  for item in [1, 2, 3, 4]
+    continue if item % 2 == 0
+    out[#out + 1] = item
+  end
+  return out
+end
+"""
+  mod = compileAndLoad(src)
+  out = mod.probe()
+  assertEq(out[1], 1)
+  assertEq(out[2], 3)
+  assertNil(out[3])
+end
 fn testForInAndLengthAppendValues()
   out = []
   for item in ['a', 'b']

@@ -24,6 +24,12 @@ Decodes JSON text into Jaya values.
 
 Objects become hashes, arrays become arrays, and `null` becomes `nil`.
 
+Requiring `json` also adds:
+- `object.toJson()`
+- `SomeClass.fromJson(value)`
+
+Those helpers are loaded with the module rather than being present in the prelude by default.
+
 ## `json.snakeCase`
 
 Key-transform option for `json.encode`.

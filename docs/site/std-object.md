@@ -9,8 +9,9 @@ Default instance behavior is exposed through `Object`.
 
 Current methods:
 
-- `toJson()`
 - `publicFields()`
 - `privateFields()`
 - `protectedFields()`
 - `s()`
+
+`toJson()` is added when [`json`](/std-json) is required.
