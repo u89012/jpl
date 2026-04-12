@@ -131,16 +131,16 @@ export default function Home() {
   const [example, setExample] = useState('functions');
 
   return (
-    <Layout title="Jaya" description="The Jaya Programming Language">
+    <Layout title="Jaya" description="Jaya Programming Language">
       <header className="hero hero--jaya">
         <div className="container">
           <div className="row row--align-center">
             <div className="col col--6">
-              <h1 className="hero__title">The Jaya Programming Language</h1>
+              <h1 className="hero__title">Jaya Programming Language</h1>
               <p className="hero__subtitle">
-                A fast, modern dynamic language, thoughtfully designed for applications, DSLs, and practical tooling.
-                Jaya combines clean syntax, compile-time macros, classes,
-                pattern matching, and a growing standard library.
+                Open source, fast, modern dynamic language, thoughtfully designed for applications, DSLs, and practical tooling with a
+                clean syntax, compile-time macros, classes,
+                pattern matching and more with a growing standard library.
               </p>
               <div>
                 <Link className="button button--primary button--lg" to="/getting-started">
