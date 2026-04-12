@@ -67,7 +67,7 @@ export default function Home() {
   const [example, setExample] = useState('html');
 
   return (
-    <Layout title="Jaya" description="Jaya language documentation">
+    <Layout title="Jaya" description="The Jaya Programming Language">
       <header className="hero hero--jaya">
         <div className="container">
           <div className="row row--align-center">

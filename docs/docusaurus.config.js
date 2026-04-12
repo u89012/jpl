@@ -76,7 +76,7 @@ const config = {
           ],
         },
       ],
-      copyright: `Copyright © ${new Date().getFullYear()} Jaya`,
+      copyright: `Made with love by <a href="https://github.com/u89012">@u89012</a>`,
     },
     prism: {
       additionalLanguages: ['lua', 'bash', 'json'],

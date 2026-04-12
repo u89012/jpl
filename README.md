@@ -98,3 +98,11 @@ The generated static site is written to `docs/build/`.
 Jaya is already usable for experimentation and internal tooling, but it is still
 an actively evolving language. The implementation, standard library, and
 documentation are being built together.
+
+## Contributions Welcome
+
+Contributions, experiments, bug reports, and documentation improvements are all
+welcome.
+
+If you want to help shape the language, stdlib, tooling, or docs, open an issue
+or send a pull request.
