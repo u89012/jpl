@@ -58,7 +58,7 @@ export fn payload(user)
     first_name = user.firstName,
     role = user.role,
     tags = ['team', 'active']
-  }, casing=json.camel)
+  }, casing=json.camelCase)
 end`,
   },
 };

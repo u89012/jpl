@@ -37,16 +37,16 @@ const String = {
     return string.sub(self, #self - #suffix + 1, #self) == suffix
   end,
 
-  snake = fn(self)
-    return inflector.snake(self)
+  snakeCase = fn(self)
+    return inflector.snakeCase(self)
   end,
 
-  camel = fn(self)
-    return inflector.camel(self)
+  camelCase = fn(self)
+    return inflector.camelCase(self)
   end,
 
-  pascal = fn(self)
-    return inflector.pascal(self)
+  pascalCase = fn(self)
+    return inflector.pascalCase(self)
   end
 }
 

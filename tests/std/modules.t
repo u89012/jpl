@@ -12,7 +12,7 @@ export fn probe()
     user_info = {display_name = 'Ada Lovelace'},
     tags = ['jaya', 'lua'],
     note = nil
-  }, casing=json.camel)
+  }, casing=json.camelCase)
   data = json.decode('{"firstName":"Ada","age":9,"active":true,"userInfo":{"displayName":"Ada Lovelace"},"tags":["jaya","lua"],"note":null}')
   return [
     text.includes('"firstName":"Ada"'),

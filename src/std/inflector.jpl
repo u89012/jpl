@@ -33,11 +33,11 @@ fn capitalizeWord(word)
   return string.upper(string.sub(word, 1, 1)) + string.sub(word, 2, #word)
 end
 
-export fn snake(value)
+export fn snakeCase(value)
   return normalizeWords(value)
 end
 
-export fn camel(value)
+export fn camelCase(value)
   words = splitWords(normalizeWords(value))
   if #words == 0
     return ''
@@ -51,7 +51,7 @@ export fn camel(value)
   return out
 end
 
-export fn pascal(value)
+export fn pascalCase(value)
   words = splitWords(normalizeWords(value))
   out = ''
   for word in words

@@ -10,9 +10,19 @@ Current standard library modules include:
 - `sys`
 - `fs`
 - `test`
+- `string`
+- `number`
+- `array`
+- `hash`
+- `bool`
+- `object`
+- `class`
+- `module`
+- `function`
 - `json`
 - `html`
 - `math`
+- `inflector`
 
 Core prelude-backed types include:
 
@@ -36,7 +46,7 @@ Examples:
 
 ```jaya
 json = require('json')
-json.encode({first_name = 'Ada'}, casing=json.camel)
+json.encode({first_name = 'Ada'}, casing=json.camelCase)
 ```
 
 ```jaya
@@ -47,3 +57,6 @@ b.div(class='panel') do
 end
 print(b.s())
 ```
+
+Each stdlib module now has its own reference page in the sidebar under
+`Standard Library -> Modules`.

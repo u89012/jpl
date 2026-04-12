@@ -2,9 +2,9 @@ fn jsonError(message)
   throw 'json error: ' + message
 end
 
-export const snake = 'snake'
-export const camel = 'camel'
-export const pascal = 'pascal'
+export const snakeCase = 'snake'
+export const camelCase = 'camel'
+export const pascalCase = 'pascal'
 
 fn skipWhitespace(input, index)
   ch = string.sub(input, index, index)
@@ -186,12 +186,12 @@ fn encodeKey(key, casing)
   case casing
   when nil
     return key
-  when snake
-    return key.snake()
-  when camel
-    return key.camel()
-  when pascal
-    return key.pascal()
+  when snakeCase
+    return key.snakeCase()
+  when camelCase
+    return key.camelCase()
+  when pascalCase
+    return key.pascalCase()
   else
     jsonError('unsupported casing: ' + tostring(casing))
   end
