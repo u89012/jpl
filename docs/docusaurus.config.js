@@ -9,6 +9,21 @@ const config = {
   organizationName: 'u89012',
   projectName: 'jpl',
   trailingSlash: false,
+  scripts: [
+    {
+      src: 'https://www.googletagmanager.com/gtag/js?id=G-X9C1H1DPPP',
+      async: true,
+    },
+  ],
+  headTags: [
+    {
+      tagName: 'script',
+      innerHTML: `window.dataLayer = window.dataLayer || [];
+function gtag(){dataLayer.push(arguments);}
+gtag('js', new Date());
+gtag('config', 'G-X9C1H1DPPP');`,
+    },
+  ],
 
   onBrokenLinks: 'throw',
   markdown: {
