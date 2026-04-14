@@ -18,6 +18,7 @@ const config = {
   headTags: [
     {
       tagName: 'script',
+      attributes: {},
       innerHTML: `window.dataLayer = window.dataLayer || [];
 function gtag(){dataLayer.push(arguments);}
 gtag('js', new Date());
